@@ -148,12 +148,16 @@ describe('issue at', function() {
       },
     ].forEach((testCase) => {
       it(testCase.description, async function () {
+        let tokenOut = null;
         await signWithIssueAt(testCase.iat, testCase.options, (err, token) => {
-          testUtils.asyncCheck(done, async () => {
+          testUtils.asyncCheck(done, () => {
             expect(err).to.be.null;
-            expect(await jwt.decode(token).iat).to.equal(testCase.expectedIssueAt);
+            tokenOut = token;
           });
         });
+        expect(tokenOut).to.not.be.null;
+        const decoded = await jwt.decode(tokenOut);
+        expect(decoded.iat).to.equal(testCase.expectedIssueAt);
       });
     });
   });
