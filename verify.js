@@ -15,7 +15,7 @@ if (PS_SUPPORTED) {
   RSA_KEY_ALGS.splice(3, 0, 'PS256', 'PS384', 'PS512');
 }
 
-module.exports = function (jwtString, secretOrPublicKey, options, callback) {
+module.exports = async function (jwtString, secretOrPublicKey, options, callback) {
   if ((typeof options === 'function') && !callback) {
     callback = options;
     options = {};
@@ -66,7 +66,7 @@ module.exports = function (jwtString, secretOrPublicKey, options, callback) {
   var decodedToken;
 
   try {
-    decodedToken = decode(jwtString, { complete: true });
+    decodedToken = await decode(jwtString, { complete: true });
   } catch(err) {
     return done(err);
   }
@@ -91,7 +91,7 @@ module.exports = function (jwtString, secretOrPublicKey, options, callback) {
     };
   }
 
-  return getSecret(header, function(err, secretOrPublicKey) {
+  return getSecret(header, async function(err, secretOrPublicKey) {
     if(err) {
       return done(new JsonWebTokenError('error in secret or public key callback: ' + err.message));
     }
@@ -124,7 +124,7 @@ module.exports = function (jwtString, secretOrPublicKey, options, callback) {
     var valid;
 
     try {
-      valid = jws.verify(jwtString, decodedToken.header.alg, secretOrPublicKey);
+      valid = await jws.verify(jwtString, decodedToken.header.alg, secretOrPublicKey);
     } catch (e) {
       return done(e);
     }

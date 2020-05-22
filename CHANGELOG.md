@@ -19,7 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### New Functionality
 
  - feat: add PS JWA support for applicable node versions (#573) ([eefb9d9c6eec54718fa6e41306bda84788df7bec](https://github.com/auth0/node-jsonwebtoken/commit/eefb9d9c6eec54718fa6e41306bda84788df7bec)), closes [#573](https://github.com/auth0/node-jsonwebtoken/issues/573)
- - Add complete option in jwt.verify (#522) ([8737789dd330cf9e7870f4df97fd52479adbac22](https://github.com/auth0/node-jsonwebtoken/commit/8737789dd330cf9e7870f4df97fd52479adbac22)), closes [#522](https://github.com/auth0/node-jsonwebtoken/issues/522)
+ - Add complete option in await jwt.verify (#522) ([8737789dd330cf9e7870f4df97fd52479adbac22](https://github.com/auth0/node-jsonwebtoken/commit/8737789dd330cf9e7870f4df97fd52479adbac22)), closes [#522](https://github.com/auth0/node-jsonwebtoken/issues/522)
 
  ### Test Improvements
 
@@ -220,7 +220,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 7.1.1 - 2016-07-12
 
- - do not mutate options in jwt.verify, closes #227 ([63263a28a268624dab0927b9ad86fffa44a10f84](https://github.com/auth0/node-jsonwebtoken/commit/63263a28a268624dab0927b9ad86fffa44a10f84)), closes [#227](https://github.com/auth0/node-jsonwebtoken/issues/227)
+ - do not mutate options in await jwt.verify, closes #227 ([63263a28a268624dab0927b9ad86fffa44a10f84](https://github.com/auth0/node-jsonwebtoken/commit/63263a28a268624dab0927b9ad86fffa44a10f84)), closes [#227](https://github.com/auth0/node-jsonwebtoken/issues/227)
  - refactor into multiple files ([e11d505207fa33501298300c9accbfb809d8748d](https://github.com/auth0/node-jsonwebtoken/commit/e11d505207fa33501298300c9accbfb809d8748d))
 
 ## 7.1.0 - 2016-07-12
@@ -229,11 +229,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 7.0.0 - 2016-05-19
 
- - change jwt.sign to return errors on callback instead of throwing errors ([1e46c5a42aa3dab8478efa4081d8f8f5c5485d56](https://github.com/auth0/node-jsonwebtoken/commit/1e46c5a42aa3dab8478efa4081d8f8f5c5485d56))
+ - change await jwt.sign to return errors on callback instead of throwing errors ([1e46c5a42aa3dab8478efa4081d8f8f5c5485d56](https://github.com/auth0/node-jsonwebtoken/commit/1e46c5a42aa3dab8478efa4081d8f8f5c5485d56))
 
 ## 6.2.0 - 2016-04-29
 
- - add support for `options.clockTolerance` to `jwt.verify` ([65ddea934f226bf06bc9d6a55be9587515cfc38d](https://github.com/auth0/node-jsonwebtoken/commit/65ddea934f226bf06bc9d6a55be9587515cfc38d))
+ - add support for `options.clockTolerance` to `await jwt.verify` ([65ddea934f226bf06bc9d6a55be9587515cfc38d](https://github.com/auth0/node-jsonwebtoken/commit/65ddea934f226bf06bc9d6a55be9587515cfc38d))
 
 ## 6.1.2 - 2016-04-29
 

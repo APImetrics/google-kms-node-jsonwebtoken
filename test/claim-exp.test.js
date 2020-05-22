@@ -9,12 +9,14 @@ const testUtils = require('./test-utils');
 const base64UrlEncode = testUtils.base64UrlEncode;
 const noneAlgorithmHeader = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0';
 
-function signWithExpiresIn(expiresIn, payload, callback) {
+const done = () => () => null;
+
+async function signWithExpiresIn(expiresIn, payload, callback) {
   const options = {algorithm: 'none'};
   if (expiresIn !== undefined) {
     options.expiresIn = expiresIn;
   }
-  testUtils.signJWTHelper(payload, 'secret', options, callback);
+  await testUtils.signJWTHelper(payload, 'secret', options, callback);
 }
 
 describe('expires', function() {
@@ -36,8 +38,8 @@ describe('expires', function() {
       {},
       {foo: 'bar'},
     ].forEach((expiresIn) => {
-      it(`should error with with value ${util.inspect(expiresIn)}`, function (done) {
-        signWithExpiresIn(expiresIn, {}, (err) => {
+      it(`should error with with value ${util.inspect(expiresIn)}`, async function () {
+        await signWithExpiresIn(expiresIn, {}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(Error);
             expect(err).to.have.property('message')
@@ -48,8 +50,8 @@ describe('expires', function() {
     });
 
     // undefined needs special treatment because {} is not the same as {expiresIn: undefined}
-    it('should error with with value undefined', function (done) {
-      testUtils.signJWTHelper({}, undefined, {expiresIn: undefined, algorithm: 'none'}, (err) => {
+    it('should error with with value undefined', async function () {
+      await testUtils.signJWTHelper({}, undefined, {expiresIn: undefined, algorithm: 'none'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -60,8 +62,8 @@ describe('expires', function() {
       });
     });
 
-    it ('should error when "exp" is in payload', function(done) {
-      signWithExpiresIn(100, {exp: 100}, (err) => {
+    it('should error when "exp" is in payload', async function() {
+      await signWithExpiresIn(100, {exp: 100}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -72,8 +74,8 @@ describe('expires', function() {
       });
     });
 
-    it('should error with a string payload', function(done) {
-      signWithExpiresIn(100, 'a string payload', (err) => {
+    it('should error with a string payload', async function() {
+      await signWithExpiresIn(100, 'a string payload', (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property('message', 'invalid expiresIn option for string payload');
@@ -81,8 +83,8 @@ describe('expires', function() {
       });
     });
 
-    it('should error with a Buffer payload', function(done) {
-      signWithExpiresIn(100, Buffer.from('a Buffer payload'), (err) => {
+    it('should error with a Buffer payload', async function() {
+      await signWithExpiresIn(100, Buffer.from('a Buffer payload'), (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property('message', 'invalid expiresIn option for object payload');
@@ -105,8 +107,8 @@ describe('expires', function() {
       {},
       {foo: 'bar'},
     ].forEach((exp) => {
-      it(`should error with with value ${util.inspect(exp)}`, function (done) {
-        signWithExpiresIn(undefined, {exp}, (err) => {
+      it(`should error with with value ${util.inspect(exp)}`, async function () {
+        await signWithExpiresIn(undefined, {exp}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(Error);
             expect(err).to.have.property('message', '"exp" should be a number of seconds');
@@ -132,10 +134,10 @@ describe('expires', function() {
       {},
       {foo: 'bar'},
     ].forEach((exp) => {
-      it(`should error with with value ${util.inspect(exp)}`, function (done) {
+      it(`should error with with value ${util.inspect(exp)}`, async function () {
         const encodedPayload = base64UrlEncode(JSON.stringify({exp}));
         const token = `${noneAlgorithmHeader}.${encodedPayload}.`;
-        testUtils.verifyJWTHelper(token, undefined, {exp}, (err) => {
+        await testUtils.verifyJWTHelper(token, undefined, {exp}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', 'invalid exp value');
@@ -155,10 +157,10 @@ describe('expires', function() {
       fakeClock.uninstall();
     });
 
-    it('should set correct "exp" with negative number of seconds', function(done) {
-      signWithExpiresIn(-10, {}, (e1, token) => {
+    it('should set correct "exp" with negative number of seconds', async function() {
+      await signWithExpiresIn(-10, {}, async (e1, token) => {
         fakeClock.tick(-10001);
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -168,9 +170,9 @@ describe('expires', function() {
       });
     });
 
-    it('should set correct "exp" with positive number of seconds', function(done) {
-      signWithExpiresIn(10, {}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+    it('should set correct "exp" with positive number of seconds', async function() {
+      await signWithExpiresIn(10, {}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -180,10 +182,10 @@ describe('expires', function() {
       });
     });
 
-    it('should set correct "exp" with zero seconds', function(done) {
-      signWithExpiresIn(0, {}, (e1, token) => {
+    it('should set correct "exp" with zero seconds', async function() {
+      await signWithExpiresIn(0, {}, async (e1, token) => {
         fakeClock.tick(-1);
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -193,10 +195,10 @@ describe('expires', function() {
       });
     });
 
-    it('should set correct "exp" with negative string timespan', function(done) {
-      signWithExpiresIn('-10 s', {}, (e1, token) => {
+    it('should set correct "exp" with negative string timespan', async function() {
+      await signWithExpiresIn('-10 s', {}, async (e1, token) => {
         fakeClock.tick(-10001);
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -206,10 +208,10 @@ describe('expires', function() {
       });
     });
 
-    it('should set correct "exp" with positive string timespan', function(done) {
-      signWithExpiresIn('10 s', {}, (e1, token) => {
+    it('should set correct "exp" with positive string timespan', async function() {
+      await signWithExpiresIn('10 s', {}, async (e1, token) => {
         fakeClock.tick(-10001);
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -219,10 +221,10 @@ describe('expires', function() {
       });
     });
 
-    it('should set correct "exp" with zero string timespan', function(done) {
-      signWithExpiresIn('0 s', {}, (e1, token) => {
+    it('should set correct "exp" with zero string timespan', async function() {
+      await signWithExpiresIn('0 s', {}, async (e1, token) => {
         fakeClock.tick(-1);
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -233,9 +235,9 @@ describe('expires', function() {
     });
 
     // TODO an exp of -Infinity should fail validation
-    it('should set null "exp" when given -Infinity', function (done) {
-      signWithExpiresIn(undefined, {exp: -Infinity}, (err, token) => {
-        const decoded = jwt.decode(token);
+    it('should set null "exp" when given -Infinity', async function () {
+      await signWithExpiresIn(undefined, {exp: -Infinity}, async (err, token) => {
+        const decoded = await jwt.decode(token);
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.null;
           expect(decoded).to.have.property('exp', null);
@@ -244,9 +246,9 @@ describe('expires', function() {
     });
 
     // TODO an exp of Infinity should fail validation
-    it('should set null "exp" when given value Infinity', function (done) {
-      signWithExpiresIn(undefined, {exp: Infinity}, (err, token) => {
-        const decoded = jwt.decode(token);
+    it('should set null "exp" when given value Infinity', async function () {
+      await signWithExpiresIn(undefined, {exp: Infinity}, async (err, token) => {
+        const decoded = await jwt.decode(token);
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.null;
           expect(decoded).to.have.property('exp', null);
@@ -255,9 +257,9 @@ describe('expires', function() {
     });
 
     // TODO an exp of NaN should fail validation
-    it('should set null "exp" when given value NaN', function (done) {
-      signWithExpiresIn(undefined, {exp: NaN}, (err, token) => {
-        const decoded = jwt.decode(token);
+    it('should set null "exp" when given value NaN', async function () {
+      await signWithExpiresIn(undefined, {exp: NaN}, async (err, token) => {
+        const decoded = await jwt.decode(token);
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.null;
           expect(decoded).to.have.property('exp', null);
@@ -265,9 +267,9 @@ describe('expires', function() {
       });
     });
 
-    it('should set correct "exp" when "iat" is passed', function (done) {
-      signWithExpiresIn(-10, {iat: 80}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+    it('should set correct "exp" when "iat" is passed', async function () {
+      await signWithExpiresIn(-10, {iat: 80}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -277,9 +279,9 @@ describe('expires', function() {
       });
     });
 
-    it('should verify "exp" using "clockTimestamp"', function (done) {
-      signWithExpiresIn(10, {}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {clockTimestamp: 69}, (e2, decoded) => {
+    it('should verify "exp" using "clockTimestamp"', async function () {
+      await signWithExpiresIn(10, {}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {clockTimestamp: 69}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -290,10 +292,10 @@ describe('expires', function() {
       });
     });
 
-    it('should verify "exp" using "clockTolerance"', function (done) {
-      signWithExpiresIn(5, {}, (e1, token) => {
+    it('should verify "exp" using "clockTolerance"', async function () {
+      await signWithExpiresIn(5, {}, async (e1, token) => {
         fakeClock.tick(10000);
-        testUtils.verifyJWTHelper(token, undefined, {clockTimestamp: 6}, (e2, decoded) => {
+        await testUtils.verifyJWTHelper(token, undefined, {clockTimestamp: 6}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -304,9 +306,9 @@ describe('expires', function() {
       });
     });
 
-    it('should ignore a expired token when "ignoreExpiration" is true', function (done) {
-      signWithExpiresIn('-10 s', {}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {ignoreExpiration: true}, (e2, decoded) => {
+    it('should ignore a expired token when "ignoreExpiration" is true', async function () {
+      await signWithExpiresIn('-10 s', {}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {ignoreExpiration: true}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -317,9 +319,9 @@ describe('expires', function() {
       });
     });
 
-    it('should error on verify if "exp" is at current time', function(done) {
-      signWithExpiresIn(undefined, {exp: 60}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2) => {
+    it('should error on verify if "exp" is at current time', async function() {
+      await signWithExpiresIn(undefined, {exp: 60}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.instanceOf(jwt.TokenExpiredError);
@@ -329,9 +331,9 @@ describe('expires', function() {
       });
     });
 
-    it('should error on verify if "exp" is before current time using clockTolerance', function (done) {
-      signWithExpiresIn(-5, {}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {clockTolerance: 5}, (e2) => {
+    it('should error on verify if "exp" is before current time using clockTolerance', async function () {
+      await signWithExpiresIn(-5, {}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {clockTolerance: 5}, (e2) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.instanceOf(jwt.TokenExpiredError);

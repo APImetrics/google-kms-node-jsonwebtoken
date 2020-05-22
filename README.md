@@ -21,7 +21,7 @@ $ npm install jsonwebtoken
 
 # Usage
 
-### jwt.sign(payload, secretOrPrivateKey, [options, callback])
+### await jwt.sign(payload, secretOrPrivateKey, [options, callback])
 
 (Asynchronous) If a callback is supplied, the callback is called with the `err` or the JWT.
 
@@ -66,26 +66,26 @@ Synchronous Sign with default (HMAC SHA256)
 
 ```js
 var jwt = require('jsonwebtoken');
-var token = jwt.sign({ foo: 'bar' }, 'shhhhh');
+var token = await jwt.sign({ foo: 'bar' }, 'shhhhh');
 ```
 
 Synchronous Sign with RSA SHA256
 ```js
 // sign with RSA SHA256
 var privateKey = fs.readFileSync('private.key');
-var token = jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' });
+var token = await jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' });
 ```
 
 Sign asynchronously
 ```js
-jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' }, function(err, token) {
+await jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' }, function(err, token) {
   console.log(token);
 });
 ```
 
 Backdate a jwt 30 seconds
 ```js
-var older_token = jwt.sign({ foo: 'bar', iat: Math.floor(Date.now() / 1000) - 30 }, 'shhhhh');
+var older_token = await jwt.sign({ foo: 'bar', iat: Math.floor(Date.now() / 1000) - 30 }, 'shhhhh');
 ```
 
 #### Token Expiration (exp claim)
@@ -99,7 +99,7 @@ This means that the `exp` field should contain the number of seconds since the e
 Signing a token with 1 hour of expiration:
 
 ```javascript
-jwt.sign({
+await jwt.sign({
   exp: Math.floor(Date.now() / 1000) + (60 * 60),
   data: 'foobar'
 }, 'secret');
@@ -108,18 +108,18 @@ jwt.sign({
 Another way to generate a token like this with this library is:
 
 ```javascript
-jwt.sign({
+await jwt.sign({
   data: 'foobar'
 }, 'secret', { expiresIn: 60 * 60 });
 
 //or even better:
 
-jwt.sign({
+await jwt.sign({
   data: 'foobar'
 }, 'secret', { expiresIn: '1h' });
 ```
 
-### jwt.verify(token, secretOrPublicKey, [options, callback])
+### await jwt.verify(token, secretOrPublicKey, [options, callback])
 
 (Asynchronous) If a callback is supplied, function acts asynchronously. The callback is called with the decoded payload if the signature is valid and optional expiration, audience, or issuer are valid. If not, it will be called with the error.
 
@@ -131,7 +131,7 @@ jwt.sign({
 
 `secretOrPublicKey` is a string or buffer containing either the secret for HMAC algorithms, or the PEM
 encoded public key for RSA and ECDSA.
-If `jwt.verify` is called asynchronous, `secretOrPublicKey` can be a function that should fetch the secret or public key. See below for a detailed example
+If `await jwt.verify` is called asynchronous, `secretOrPublicKey` can be a function that should fetch the secret or public key. See below for a detailed example
 
 As mentioned in [this comment](https://github.com/auth0/node-jsonwebtoken/issues/208#issuecomment-231861138), there are other libraries that expect base64 encoded secrets (random bytes encoded using base64), if that is your case you can pass `Buffer.from(secret, 'base64')`, by doing this the secret will be decoded using base64 and the token verification will use the original random bytes.
 
@@ -155,60 +155,60 @@ As mentioned in [this comment](https://github.com/auth0/node-jsonwebtoken/issues
 
 ```js
 // verify a token symmetric - synchronous
-var decoded = jwt.verify(token, 'shhhhh');
+var decoded = await jwt.verify(token, 'shhhhh');
 console.log(decoded.foo) // bar
 
 // verify a token symmetric
-jwt.verify(token, 'shhhhh', function(err, decoded) {
+await jwt.verify(token, 'shhhhh', function(err, decoded) {
   console.log(decoded.foo) // bar
 });
 
 // invalid token - synchronous
 try {
-  var decoded = jwt.verify(token, 'wrong-secret');
+  var decoded = await jwt.verify(token, 'wrong-secret');
 } catch(err) {
   // err
 }
 
 // invalid token
-jwt.verify(token, 'wrong-secret', function(err, decoded) {
+await jwt.verify(token, 'wrong-secret', function(err, decoded) {
   // err
   // decoded undefined
 });
 
 // verify a token asymmetric
 var cert = fs.readFileSync('public.pem');  // get public key
-jwt.verify(token, cert, function(err, decoded) {
+await jwt.verify(token, cert, function(err, decoded) {
   console.log(decoded.foo) // bar
 });
 
 // verify audience
 var cert = fs.readFileSync('public.pem');  // get public key
-jwt.verify(token, cert, { audience: 'urn:foo' }, function(err, decoded) {
+await jwt.verify(token, cert, { audience: 'urn:foo' }, function(err, decoded) {
   // if audience mismatch, err == invalid audience
 });
 
 // verify issuer
 var cert = fs.readFileSync('public.pem');  // get public key
-jwt.verify(token, cert, { audience: 'urn:foo', issuer: 'urn:issuer' }, function(err, decoded) {
+await jwt.verify(token, cert, { audience: 'urn:foo', issuer: 'urn:issuer' }, function(err, decoded) {
   // if issuer mismatch, err == invalid issuer
 });
 
 // verify jwt id
 var cert = fs.readFileSync('public.pem');  // get public key
-jwt.verify(token, cert, { audience: 'urn:foo', issuer: 'urn:issuer', jwtid: 'jwtid' }, function(err, decoded) {
+await jwt.verify(token, cert, { audience: 'urn:foo', issuer: 'urn:issuer', jwtid: 'jwtid' }, function(err, decoded) {
   // if jwt id mismatch, err == invalid jwt id
 });
 
 // verify subject
 var cert = fs.readFileSync('public.pem');  // get public key
-jwt.verify(token, cert, { audience: 'urn:foo', issuer: 'urn:issuer', jwtid: 'jwtid', subject: 'subject' }, function(err, decoded) {
+await jwt.verify(token, cert, { audience: 'urn:foo', issuer: 'urn:issuer', jwtid: 'jwtid', subject: 'subject' }, function(err, decoded) {
   // if subject mismatch, err == invalid subject
 });
 
 // alg mismatch
 var cert = fs.readFileSync('public.pem'); // get public key
-jwt.verify(token, cert, { algorithms: ['RS256'] }, function (err, payload) {
+await jwt.verify(token, cert, { algorithms: ['RS256'] }, function (err, payload) {
   // if token alg != RS256,  err == invalid signature
 });
 
@@ -225,17 +225,17 @@ function getKey(header, callback){
   });
 }
 
-jwt.verify(token, getKey, options, function(err, decoded) {
+await jwt.verify(token, getKey, options, function(err, decoded) {
   console.log(decoded.foo) // bar
 });
 
 ```
 
-### jwt.decode(token [, options])
+### await jwt.decode(token [, options])
 
 (Synchronous) Returns the decoded payload without verifying if the signature is valid.
 
-> __Warning:__ This will __not__ verify whether the signature is valid. You should __not__ use this for untrusted messages. You most likely want to use `jwt.verify` instead.
+> __Warning:__ This will __not__ verify whether the signature is valid. You should __not__ use this for untrusted messages. You most likely want to use `await jwt.verify` instead.
 
 > __Warning:__ When the token comes from an untrusted source (e.g. user input or external request), the returned decoded payload should be treated like any other user input; please make sure to sanitize and only work with properties that are expected
 
@@ -251,10 +251,10 @@ Example
 
 ```js
 // get the decoded payload ignoring signature, no secretOrPrivateKey needed
-var decoded = jwt.decode(token);
+var decoded = await jwt.decode(token);
 
 // get the decoded payload and header
-var decoded = jwt.decode(token, {complete: true});
+var decoded = await jwt.decode(token, {complete: true});
 console.log(decoded.header);
 console.log(decoded.payload)
 ```
@@ -274,7 +274,7 @@ Error object:
 * expiredAt: [ExpDate]
 
 ```js
-jwt.verify(token, 'shhhhh', function(err, decoded) {
+await jwt.verify(token, 'shhhhh', function(err, decoded) {
   if (err) {
     /*
       err = {
@@ -301,7 +301,7 @@ Error object:
   * 'jwt subject invalid. expected: [OPTIONS SUBJECT]'
 
 ```js
-jwt.verify(token, 'shhhhh', function(err, decoded) {
+await jwt.verify(token, 'shhhhh', function(err, decoded) {
   if (err) {
     /*
       err = {
@@ -323,7 +323,7 @@ Error object:
 * date: 2018-10-04T16:10:44.000Z
 
 ```js
-jwt.verify(token, 'shhhhh', function(err, decoded) {
+await jwt.verify(token, 'shhhhh', function(err, decoded) {
   if (err) {
     /*
       err = {
