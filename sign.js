@@ -79,7 +79,7 @@ var options_for_objects = [
   'jwtid',
 ];
 
-module.exports = function (payload, secretOrPrivateKey, options, callback) {
+module.exports = async function(payload, secretOrPrivateKey, options, callback) {
   if (typeof options === 'function') {
     callback = options;
     options = {};
@@ -191,15 +191,25 @@ module.exports = function (payload, secretOrPrivateKey, options, callback) {
   if (typeof callback === 'function') {
     callback = callback && once(callback);
 
-    jws.createSign({
-      header: header,
-      privateKey: secretOrPrivateKey,
-      payload: payload,
-      encoding: encoding
-    }).once('error', callback)
-      .once('done', function (signature) {
-        callback(null, signature);
-      });
+    return new Promise((resolve, reject) => {
+      //try {
+      return jws.createSign({
+        header: header,
+        privateKey: secretOrPrivateKey,
+        payload: payload,
+        encoding: encoding
+      })
+        .on('done', resolve)
+        .on('error', reject)
+        .once('error', callback)
+        .once('done', function (signature) {
+          return callback(null, signature);
+        })
+      // }
+      // catch (err) {
+      //   reject(err);
+      // }
+    });
   } else {
     return jws.sign({header: header, payload: payload, secret: secretOrPrivateKey, encoding: encoding});
   }

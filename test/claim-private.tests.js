@@ -4,8 +4,10 @@ const expect = require('chai').expect;
 const util = require('util');
 const testUtils = require('./test-utils');
 
-function signWithPayload(payload, callback) {
-  testUtils.signJWTHelper(payload, 'secret', {algorithm: 'none'}, callback);
+const done = () => () => null;
+
+async function signWithPayload(payload, callback) {
+  await testUtils.signJWTHelper(payload, 'secret', {algorithm: 'none'}, callback);
 }
 
 describe('with a private claim', function() {
@@ -26,9 +28,9 @@ describe('with a private claim', function() {
     {},
     {foo: 'bar'},
   ].forEach((privateClaim) => {
-    it(`should sign and verify with claim of ${util.inspect(privateClaim)}`, function (done) {
-      signWithPayload({privateClaim}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+    it(`should sign and verify with claim of ${util.inspect(privateClaim)}`, async function () {
+      await signWithPayload({privateClaim}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -45,9 +47,9 @@ describe('with a private claim', function() {
     Infinity,
     NaN,
   ].forEach((privateClaim) => {
-    it(`should sign and verify with claim of ${util.inspect(privateClaim)}`, function (done) {
-      signWithPayload({privateClaim}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+    it(`should sign and verify with claim of ${util.inspect(privateClaim)}`, async function () {
+      await signWithPayload({privateClaim}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -59,9 +61,9 @@ describe('with a private claim', function() {
   });
 
   // private claims with value undefined are not added to the payload
-  it(`should sign and verify with claim of undefined`, function (done) {
-    signWithPayload({privateClaim: undefined}, (e1, token) => {
-      testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+  it(`should sign and verify with claim of undefined`, async function () {
+    await signWithPayload({privateClaim: undefined}, async (e1, token) => {
+      await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
         testUtils.asyncCheck(done, () => {
           expect(e1).to.be.null;
           expect(e2).to.be.null;

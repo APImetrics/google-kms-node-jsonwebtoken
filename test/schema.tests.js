@@ -1,7 +1,9 @@
 var jwt = require('../index');
-var expect = require('chai').expect;
+var chai = require('chai');
 var fs = require('fs');
 var PS_SUPPORTED = require('../lib/psSupported');
+var expect = chai.expect;
+chai.use(require('chai-as-promised'))
 
 describe('schema', function() {
 
@@ -10,65 +12,65 @@ describe('schema', function() {
     var cert_rsa_priv = fs.readFileSync(__dirname + '/rsa-private.pem');
     var cert_ecdsa_priv = fs.readFileSync(__dirname + '/ecdsa-private.pem');
 
-    function sign(options) {
+    async function sign(options) {
       var isEcdsa = options.algorithm && options.algorithm.indexOf('ES') === 0;
-      jwt.sign({foo: 123}, isEcdsa ? cert_ecdsa_priv : cert_rsa_priv, options);
+      await jwt.sign({foo: 123}, isEcdsa ? cert_ecdsa_priv : cert_rsa_priv, options);
     }
 
-    it('should validate algorithm', function () {
-      expect(function () {
-        sign({ algorithm: 'foo' });
-      }).to.throw(/"algorithm" must be a valid string enum value/);
-      sign({algorithm: 'RS256'});
-      sign({algorithm: 'RS384'});
-      sign({algorithm: 'RS512'});
+    it('should validate algorithm', async function () {
+      await expect(
+        sign({ algorithm: 'foo' })
+      ).to.be.rejectedWith(/"algorithm" must be a valid string enum value/);
+      await sign({algorithm: 'RS256'});
+      await sign({algorithm: 'RS384'});
+      await sign({algorithm: 'RS512'});
       if (PS_SUPPORTED) {
-        sign({algorithm: 'PS256'});
-        sign({algorithm: 'PS384'});
-        sign({algorithm: 'PS512'});
+        await sign({algorithm: 'PS256'});
+        await sign({algorithm: 'PS384'});
+        await sign({algorithm: 'PS512'});
       }
-      sign({algorithm: 'ES256'});
-      sign({algorithm: 'ES384'});
-      sign({algorithm: 'ES512'});
-      sign({algorithm: 'HS256'});
-      sign({algorithm: 'HS384'});
-      sign({algorithm: 'HS512'});
-      sign({algorithm: 'none'});
+      await sign({algorithm: 'ES256'});
+      await sign({algorithm: 'ES384'});
+      await sign({algorithm: 'ES512'});
+      await sign({algorithm: 'HS256'});
+      await sign({algorithm: 'HS384'});
+      await sign({algorithm: 'HS512'});
+      await sign({algorithm: 'none'});
     });
 
-    it('should validate header', function () {
-      expect(function () {
-        sign({ header: 'foo' });
-      }).to.throw(/"header" must be an object/);
-      sign({header: {}});
+    it('should validate header', async function () {
+      expect(
+        sign({ header: 'foo' })
+      ).to.be.rejectedWith(/"header" must be an object/);
+      await sign({header: {}});
     });
 
-    it('should validate encoding', function () {
-      expect(function () {
-        sign({ encoding: 10 });
-      }).to.throw(/"encoding" must be a string/);
-      sign({encoding: 'utf8'});
+    it('should validate encoding', async function () {
+      expect(
+        sign({ encoding: 10 })
+      ).to.be.rejectedWith(/"encoding" must be a string/);
+      await sign({encoding: 'utf8'});
     });
 
-    it('should validate noTimestamp', function () {
-      expect(function () {
-        sign({ noTimestamp: 10 });
-      }).to.throw(/"noTimestamp" must be a boolean/);
-      sign({noTimestamp: true});
+    it('should validate noTimestamp', async function () {
+      expect(
+        sign({ noTimestamp: 10 })
+      ).to.be.rejectedWith(/"noTimestamp" must be a boolean/);
+      await sign({noTimestamp: true});
     });
   });
 
   describe('sign payload registered claims', function() {
 
-    function sign(payload) {
-      jwt.sign(payload, 'foo123');
+    async function sign(payload) {
+      await jwt.sign(payload, 'foo123');
     }
 
-    it('should validate exp', function () {
-      expect(function () {
-        sign({ exp: '1 monkey' });
-      }).to.throw(/"exp" should be a number of seconds/);
-      sign({ exp: 10.1 });
+    it('should validate exp',async function () {
+      expect(
+        sign({ exp: '1 monkey' })
+      ).to.be.rejectedWith(/"exp" should be a number of seconds/);
+      await sign({ exp: 10.1 });
     });
 
   });

@@ -5,17 +5,19 @@ const expect = require('chai').expect;
 const util = require('util');
 const testUtils = require('./test-utils');
 
-function signWithAudience(audience, payload, callback) {
+const done = () => () => null;
+
+async function signWithAudience(audience, payload, callback) {
   const options = {algorithm: 'none'};
   if (audience !== undefined) {
     options.audience = audience;
   }
 
-  testUtils.signJWTHelper(payload, 'secret', options, callback);
+  await testUtils.signJWTHelper(payload, 'secret', options, callback);
 }
 
-function verifyWithAudience(token, audience,  callback) {
-  testUtils.verifyJWTHelper(token, undefined, {audience}, callback);
+async function verifyWithAudience(token, audience,  callback) {
+ await testUtils.verifyJWTHelper(token, undefined, {audience}, callback);
 }
 
 describe('audience', function() {
@@ -35,8 +37,8 @@ describe('audience', function() {
       {},
       {foo: 'bar'},
     ].forEach((audience) => {
-      it(`should error with with value ${util.inspect(audience)}`, function (done) {
-        signWithAudience(audience, {}, (err) => {
+      it(`should error with with value ${util.inspect(audience)}`, async function () {
+        await signWithAudience(audience, {}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(Error);
             expect(err).to.have.property('message', '"audience" must be a string or array');
@@ -46,7 +48,7 @@ describe('audience', function() {
     });
 
     // undefined needs special treatment because {} is not the same as {aud: undefined}
-    it('should error with with value undefined', function (done) {
+    it('should error with with value undefined', async function () {
       testUtils.signJWTHelper({}, 'secret', {audience: undefined, algorithm: 'none'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
@@ -55,8 +57,8 @@ describe('audience', function() {
       });
     });
 
-    it('should error when "aud" is in payload', function (done) {
-      signWithAudience('my_aud', {aud: ''}, (err) => {
+    it('should error when "aud" is in payload', async function () {
+      await signWithAudience('my_aud', {aud: ''}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -67,8 +69,8 @@ describe('audience', function() {
       });
     });
 
-    it('should error with a string payload', function (done) {
-      signWithAudience('my_aud', 'a string payload', (err) => {
+    it('should error with a string payload', async function () {
+      await signWithAudience('my_aud', 'a string payload', (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property('message', 'invalid audience option for string payload');
@@ -76,8 +78,8 @@ describe('audience', function() {
       });
     });
 
-    it('should error with a Buffer payload', function (done) {
-      signWithAudience('my_aud', new Buffer('a Buffer payload'), (err) => {
+    it('should error with a Buffer payload', async function () {
+      await signWithAudience('my_aud', new Buffer('a Buffer payload'), (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property('message', 'invalid audience option for object payload');
@@ -90,8 +92,8 @@ describe('audience', function() {
     describe('with a "aud" of "urn:foo" in payload', function () {
       let token;
 
-      beforeEach(function (done) {
-        signWithAudience('urn:foo', {}, (err, t) => {
+      beforeEach(async () => {
+        await signWithAudience('urn:foo', {}, (err, t) => {
           token = t;
           done(err);
         });
@@ -106,8 +108,8 @@ describe('audience', function() {
         [/^urn:no_match$/, /^urn:f[o]{2}$/],
         [/^urn:no_match$/, 'urn:foo']
       ].forEach((audience) =>{
-        it(`should verify and decode with verify "audience" option of ${util.inspect(audience)}`, function (done) {
-          verifyWithAudience(token, audience, (err, decoded) => {
+        it(`should verify and decode with verify "audience" option of ${util.inspect(audience)}`, async function () {
+          await verifyWithAudience(token, audience, (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud', 'urn:foo');
@@ -116,8 +118,8 @@ describe('audience', function() {
         });
       });
 
-      it(`should error on no match with a string verify "audience" option`, function (done) {
-        verifyWithAudience(token, 'urn:no-match', (err) => {
+      it(`should error on no match with a string verify "audience" option`, async function () {
+        await verifyWithAudience(token, 'urn:no-match', (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', `jwt audience invalid. expected: urn:no-match`);
@@ -125,8 +127,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of string verify "audience" option', function (done) {
-        verifyWithAudience(token, ['urn:no-match-1', 'urn:no-match-2'], (err) => {
+      it('should error on no match with an array of string verify "audience" option', async function () {
+        await verifyWithAudience(token, ['urn:no-match-1', 'urn:no-match-2'], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', `jwt audience invalid. expected: urn:no-match-1 or urn:no-match-2`);
@@ -134,8 +136,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with a Regex verify "audience" option', function (done) {
-        verifyWithAudience(token, /^urn:no-match$/, (err) => {
+      it('should error on no match with a Regex verify "audience" option', async function () {
+        await verifyWithAudience(token, /^urn:no-match$/, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', `jwt audience invalid. expected: /^urn:no-match$/`);
@@ -143,8 +145,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of Regex verify "audience" option', function (done) {
-        verifyWithAudience(token, [/^urn:no-match-1$/, /^urn:no-match-2$/], (err) => {
+      it('should error on no match with an array of Regex verify "audience" option', async function () {
+        await verifyWithAudience(token, [/^urn:no-match-1$/, /^urn:no-match-2$/], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property(
@@ -154,8 +156,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of a Regex and a string in verify "audience" option', function (done) {
-        verifyWithAudience(token, [/^urn:no-match$/, 'urn:no-match'], (err) => {
+      it('should error on no match with an array of a Regex and a string in verify "audience" option', async function () {
+        await verifyWithAudience(token, [/^urn:no-match$/, 'urn:no-match'], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property(
@@ -169,8 +171,8 @@ describe('audience', function() {
     describe('with an array of ["urn:foo", "urn:bar"] for "aud" value in payload', function () {
       let token;
 
-      beforeEach(function (done) {
-        signWithAudience(['urn:foo', 'urn:bar'], {}, (err, t) => {
+      beforeEach(async () => {
+        await signWithAudience(['urn:foo', 'urn:bar'], {}, (err, t) => {
           token = t;
           done(err);
         });
@@ -185,8 +187,8 @@ describe('audience', function() {
         [/^urn:no_match$/, /^urn:f[o]{2}$/],
         [/^urn:no_match$/, 'urn:foo']
       ].forEach((audience) =>{
-        it(`should verify and decode with verify "audience" option of ${util.inspect(audience)}`, function (done) {
-          verifyWithAudience(token, audience, (err, decoded) => {
+        it(`should verify and decode with verify "audience" option of ${util.inspect(audience)}`, async function () {
+          await verifyWithAudience(token, audience, (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -195,8 +197,8 @@ describe('audience', function() {
         });
       });
 
-      it(`should error on no match with a string verify "audience" option`, function (done) {
-        verifyWithAudience(token, 'urn:no-match', (err) => {
+      it(`should error on no match with a string verify "audience" option`, async function () {
+        await verifyWithAudience(token, 'urn:no-match', (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', `jwt audience invalid. expected: urn:no-match`);
@@ -204,8 +206,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of string verify "audience" option', function (done) {
-        verifyWithAudience(token, ['urn:no-match-1', 'urn:no-match-2'], (err) => {
+      it('should error on no match with an array of string verify "audience" option', async function () {
+        await verifyWithAudience(token, ['urn:no-match-1', 'urn:no-match-2'], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', `jwt audience invalid. expected: urn:no-match-1 or urn:no-match-2`);
@@ -213,8 +215,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with a Regex verify "audience" option', function (done) {
-        verifyWithAudience(token, /^urn:no-match$/, (err) => {
+      it('should error on no match with a Regex verify "audience" option', async function () {
+        await verifyWithAudience(token, /^urn:no-match$/, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', `jwt audience invalid. expected: /^urn:no-match$/`);
@@ -222,8 +224,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of Regex verify "audience" option', function (done) {
-        verifyWithAudience(token, [/^urn:no-match-1$/, /^urn:no-match-2$/], (err) => {
+      it('should error on no match with an array of Regex verify "audience" option', async function () {
+        await verifyWithAudience(token, [/^urn:no-match-1$/, /^urn:no-match-2$/], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property(
@@ -233,8 +235,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of a Regex and a string in verify "audience" option', function (done) {
-        verifyWithAudience(token, [/^urn:no-match$/, 'urn:no-match'], (err) => {
+      it('should error on no match with an array of a Regex and a string in verify "audience" option', async function () {
+        await verifyWithAudience(token, [/^urn:no-match$/, 'urn:no-match'], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property(
@@ -245,8 +247,8 @@ describe('audience', function() {
       });
 
       describe('when checking for a matching on both "urn:foo" and "urn:bar"', function() {
-        it('should verify with an array of stings verify "audience" option', function (done) {
-          verifyWithAudience(token, ['urn:foo', 'urn:bar'], (err, decoded) => {
+        it('should verify with an array of stings verify "audience" option', async function () {
+          await verifyWithAudience(token, ['urn:foo', 'urn:bar'], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -254,8 +256,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with a Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, /^urn:[a-z]{3}$/, (err, decoded) => {
+        it('should verify with a Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, /^urn:[a-z]{3}$/, (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -263,8 +265,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array of Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, [/^urn:f[o]{2}$/, /^urn:b[ar]{2}$/], (err, decoded) => {
+        it('should verify with an array of Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, [/^urn:f[o]{2}$/, /^urn:b[ar]{2}$/], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -274,8 +276,8 @@ describe('audience', function() {
       });
 
       describe('when checking for a matching for "urn:foo"', function() {
-        it('should verify with a string verify "audience"', function (done) {
-          verifyWithAudience(token, 'urn:foo', (err, decoded) => {
+        it('should verify with a string verify "audience"', async function () {
+          await verifyWithAudience(token, 'urn:foo', (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -283,8 +285,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with a Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, /^urn:f[o]{2}$/, (err, decoded) => {
+        it('should verify with a Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, /^urn:f[o]{2}$/, (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -292,8 +294,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array of Regex verify "audience"', function (done) {
-          verifyWithAudience(token, [/^urn:no-match$/, /^urn:f[o]{2}$/], (err, decoded) => {
+        it('should verify with an array of Regex verify "audience"', async function () {
+          await verifyWithAudience(token, [/^urn:no-match$/, /^urn:f[o]{2}$/], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -301,8 +303,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array containing a string and a Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, ['urn:no_match', /^urn:f[o]{2}$/], (err, decoded) => {
+        it('should verify with an array containing a string and a Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, ['urn:no_match', /^urn:f[o]{2}$/], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -310,8 +312,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array containing a Regex and a string verify "audience" option', function (done) {
-          verifyWithAudience(token, [/^urn:no-match$/, 'urn:foo'], (err, decoded) => {
+        it('should verify with an array containing a Regex and a string verify "audience" option', async function () {
+          await verifyWithAudience(token, [/^urn:no-match$/, 'urn:foo'], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -321,8 +323,8 @@ describe('audience', function() {
       });
 
       describe('when checking matching for "urn:bar"', function() {
-        it('should verify with a string verify "audience"', function (done) {
-          verifyWithAudience(token, 'urn:bar', (err, decoded) => {
+        it('should verify with a string verify "audience"', async function () {
+          await verifyWithAudience(token, 'urn:bar', (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -330,8 +332,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with a Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, /^urn:b[ar]{2}$/, (err, decoded) => {
+        it('should verify with a Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, /^urn:b[ar]{2}$/, (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -339,8 +341,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array of Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, [/^urn:no-match$/, /^urn:b[ar]{2}$/], (err, decoded) => {
+        it('should verify with an array of Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, [/^urn:no-match$/, /^urn:b[ar]{2}$/], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -348,8 +350,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array containing a string and a Regex verify "audience" option', function (done) {
-          verifyWithAudience(token, ['urn:no_match', /^urn:b[ar]{2}$/], (err, decoded) => {
+        it('should verify with an array containing a string and a Regex verify "audience" option', async function () {
+          await verifyWithAudience(token, ['urn:no_match', /^urn:b[ar]{2}$/], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -357,8 +359,8 @@ describe('audience', function() {
           });
         });
 
-        it('should verify with an array containing a Regex and a string verify "audience" option', function (done) {
-          verifyWithAudience(token, [/^urn:no-match$/, 'urn:bar'], (err, decoded) => {
+        it('should verify with an array containing a Regex and a string verify "audience" option', async function () {
+          await verifyWithAudience(token, [/^urn:no-match$/, 'urn:bar'], (err, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(err).to.be.null;
               expect(decoded).to.have.property('aud').deep.equals(['urn:foo', 'urn:bar']);
@@ -371,15 +373,15 @@ describe('audience', function() {
     describe('without a "aud" value in payload', function () {
       let token;
 
-      beforeEach(function (done) {
-        signWithAudience(undefined, {}, (err, t) => {
+      beforeEach(async () => {
+        await signWithAudience(undefined, {}, (err, t) => {
           token = t;
           done(err);
         });
       });
 
-      it('should verify and decode without verify "audience" option', function (done) {
-        verifyWithAudience(token, undefined, (err, decoded) => {
+      it('should verify and decode without verify "audience" option', async function () {
+        await verifyWithAudience(token, undefined, (err, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.null;
             expect(decoded).to.not.have.property('aud');
@@ -387,8 +389,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with a string verify "audience" option', function (done) {
-        verifyWithAudience(token, 'urn:no-match', (err) => {
+      it('should error on no match with a string verify "audience" option', async function () {
+        await verifyWithAudience(token, 'urn:no-match', (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', 'jwt audience invalid. expected: urn:no-match');
@@ -396,8 +398,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of string verify "audience" option', function (done) {
-        verifyWithAudience(token, ['urn:no-match-1', 'urn:no-match-2'], (err) => {
+      it('should error on no match with an array of string verify "audience" option', async function () {
+        await verifyWithAudience(token, ['urn:no-match-1', 'urn:no-match-2'], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', 'jwt audience invalid. expected: urn:no-match-1 or urn:no-match-2');
@@ -405,8 +407,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with a Regex verify "audience" option', function (done) {
-        verifyWithAudience(token, /^urn:no-match$/, (err) => {
+      it('should error on no match with a Regex verify "audience" option', async function () {
+        await verifyWithAudience(token, /^urn:no-match$/, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', 'jwt audience invalid. expected: /^urn:no-match$/');
@@ -414,8 +416,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of Regex verify "audience" option', function (done) {
-        verifyWithAudience(token, [/^urn:no-match-1$/, /^urn:no-match-2$/], (err) => {
+      it('should error on no match with an array of Regex verify "audience" option', async function () {
+        await verifyWithAudience(token, [/^urn:no-match-1$/, /^urn:no-match-2$/], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', 'jwt audience invalid. expected: /^urn:no-match-1$/ or /^urn:no-match-2$/');
@@ -423,8 +425,8 @@ describe('audience', function() {
         });
       });
 
-      it('should error on no match with an array of a Regex and a string in verify "audience" option', function (done) {
-        verifyWithAudience(token, [/^urn:no-match$/, 'urn:no-match'], (err) => {
+      it('should error on no match with an array of a Regex and a string in verify "audience" option', async function () {
+        await verifyWithAudience(token, [/^urn:no-match$/, 'urn:no-match'], (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
             expect(err).to.have.property('message', 'jwt audience invalid. expected: /^urn:no-match$/ or urn:no-match');

@@ -1,17 +1,19 @@
 'use strict';
 
 const jwt = require('../');
-const expect = require('chai').expect;
+var chai = require('chai');
+chai.use(require('chai-as-promised'))
 const sinon = require('sinon');
 const util = require('util');
+var expect = chai.expect;
 
 describe('maxAge option', function() {
   let token;
 
   let fakeClock;
-  beforeEach(function() {
+  beforeEach(async function() {
     fakeClock = sinon.useFakeTimers({now: 60000});
-    token = jwt.sign({iat: 70}, undefined, {algorithm: 'none'});
+    token = await jwt.sign({iat: 70}, undefined, {algorithm: 'none'});
   });
 
   afterEach(function() {
@@ -36,11 +38,11 @@ describe('maxAge option', function() {
       maxAge: -3,
     },
   ].forEach((testCase) => {
-    it(testCase.description, function (done) {
-      expect(jwt.verify(token, undefined, {maxAge: '3s'})).to.not.throw;
-      jwt.verify(token, undefined, {maxAge: testCase.maxAge}, (err) => {
+    it(testCase.description, async () => {
+      expect(await jwt.verify(token, undefined, {maxAge: '3s'})).to.not.throw;
+      await jwt.verify(token, undefined, {maxAge: testCase.maxAge}, (err) => {
         expect(err).to.be.null;
-        done();
+        // done();
       })
     });
   });
@@ -53,17 +55,19 @@ describe('maxAge option', function() {
     {},
     {foo: 'bar'},
   ].forEach((maxAge) => {
-    it(`should error with value ${util.inspect(maxAge)}`, function (done) {
-      expect(() => jwt.verify(token, undefined, {maxAge})).to.throw(
+    it(`should error with value ${util.inspect(maxAge)}`, async () => {
+      await expect(
+        jwt.verify(token, undefined, {maxAge})
+      ).to.be.rejectedWith(
         jwt.JsonWebTokenError,
         '"maxAge" should be a number of seconds or string representing a timespan eg: "1d", "20h", 60'
       );
-      jwt.verify(token, undefined, {maxAge}, (err) => {
+      await jwt.verify(token, undefined, {maxAge}, (err) => {
         expect(err).to.be.instanceOf(jwt.JsonWebTokenError);
         expect(err.message).to.equal(
           '"maxAge" should be a number of seconds or string representing a timespan eg: "1d", "20h", 60'
         );
-        done();
+        // done();
       })
     });
   });
