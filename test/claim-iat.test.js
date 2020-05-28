@@ -9,7 +9,9 @@ const testUtils = require('./test-utils');
 const base64UrlEncode = testUtils.base64UrlEncode;
 const noneAlgorithmHeader = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0';
 
-function signWithIssueAt(issueAt, options, callback) {
+const done = () => () => null;
+
+async function signWithIssueAt(issueAt, options, callback) {
   const payload = {};
   if (issueAt !== undefined) {
     payload.iat = issueAt;
@@ -17,12 +19,12 @@ function signWithIssueAt(issueAt, options, callback) {
   const opts = Object.assign({algorithm: 'none'}, options);
   // async calls require a truthy secret
   // see: https://github.com/brianloveswords/node-jws/issues/62
-  testUtils.signJWTHelper(payload, 'secret', opts, callback);
+  await testUtils.signJWTHelper(payload, 'secret', opts, callback);
 }
 
-function verifyWithIssueAt(token, maxAge, options, callback) {
+async function verifyWithIssueAt(token, maxAge, options, callback) {
   const opts = Object.assign({maxAge}, options);
-  testUtils.verifyJWTHelper(token, undefined, opts, callback);
+  await testUtils.verifyJWTHelper(token, undefined, opts, callback);
 }
 
 describe('issue at', function() {
@@ -38,8 +40,8 @@ describe('issue at', function() {
       {},
       {foo: 'bar'},
     ].forEach((iat) => {
-      it(`should error with iat of ${util.inspect(iat)}`, function (done) {
-        signWithIssueAt(iat, {}, (err) => {
+      it(`should error with iat of ${util.inspect(iat)}`, async function () {
+        await signWithIssueAt(iat, {}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(Error);
             expect(err.message).to.equal('"iat" should be a number of seconds');
@@ -49,8 +51,8 @@ describe('issue at', function() {
     });
 
     // undefined needs special treatment because {} is not the same as {iat: undefined}
-    it('should error with iat of undefined', function (done) {
-      testUtils.signJWTHelper({iat: undefined}, 'secret', {algorithm: 'none'}, (err) => {
+    it('should error with iat of undefined', async function () {
+      await testUtils.signJWTHelper({iat: undefined}, 'secret', {algorithm: 'none'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err.message).to.equal('"iat" should be a number of seconds');
@@ -75,7 +77,7 @@ describe('issue at', function() {
       {},
       {foo: 'bar'},
     ].forEach((iat) => {
-      it(`should error with iat of ${util.inspect(iat)}`, function (done) {
+      it(`should error with iat of ${util.inspect(iat)}`, async function () {
         const encodedPayload = base64UrlEncode(JSON.stringify({iat}));
         const token = `${noneAlgorithmHeader}.${encodedPayload}.`;
         verifyWithIssueAt(token, '1 min', {}, (err) => {
@@ -145,13 +147,17 @@ describe('issue at', function() {
         options: {noTimestamp: true}
       },
     ].forEach((testCase) => {
-      it(testCase.description, function (done) {
-        signWithIssueAt(testCase.iat, testCase.options, (err, token) => {
+      it(testCase.description, async function () {
+        let tokenOut = null;
+        await signWithIssueAt(testCase.iat, testCase.options, (err, token) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.null;
-            expect(jwt.decode(token).iat).to.equal(testCase.expectedIssueAt);
+            tokenOut = token;
           });
         });
+        expect(tokenOut).to.not.be.null;
+        const decoded = await jwt.decode(tokenOut);
+        expect(decoded.iat).to.equal(testCase.expectedIssueAt);
       });
     });
   });
@@ -187,8 +193,8 @@ describe('issue at', function() {
         options: {clockTimestamp: 2},
       },
     ].forEach((testCase) => {
-      it(testCase.description, function (done) {
-        const token = jwt.sign({}, 'secret', {algorithm: 'none'});
+      it(testCase.description, async function () {
+        const token = await jwt.sign({}, 'secret', {algorithm: 'none'});
         fakeClock.tick(testCase.clockAdvance);
         verifyWithIssueAt(token, testCase.maxAge, testCase.options, (err, token) => {
           testUtils.asyncCheck(done, () => {
@@ -233,9 +239,9 @@ describe('issue at', function() {
         expectedExpiresAt: 68000,
       },
     ].forEach((testCase) => {
-      it(testCase.description, function(done) {
+      it(testCase.description, async function () {
         const expectedExpiresAtDate = new Date(testCase.expectedExpiresAt);
-        const token = jwt.sign({}, 'secret', {algorithm: 'none'});
+        const token = await jwt.sign({}, 'secret', {algorithm: 'none'});
         fakeClock.tick(testCase.clockAdvance);
 
         verifyWithIssueAt(token, testCase.maxAge, testCase.options, (err) => {
@@ -250,11 +256,11 @@ describe('issue at', function() {
   });
 
   describe('with string payload', function () {
-    it('should not add iat to string', function (done) {
+    it('should not add iat to string', async function () {
       const payload = 'string payload';
       const options = {algorithm: 'none'};
-      testUtils.signJWTHelper(payload, 'secret', options, (err, token) => {
-        const decoded = jwt.decode(token);
+      await testUtils.signJWTHelper(payload, 'secret', options, async (err, token) => {
+        const decoded = await jwt.decode(token);
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.null;
           expect(decoded).to.equal(payload);
@@ -262,11 +268,11 @@ describe('issue at', function() {
       });
     });
 
-    it('should not add iat to stringified object', function (done) {
+    it('should not add iat to stringified object', async function () {
       const payload = '{}';
       const options = {algorithm: 'none', header: {typ: 'JWT'}};
-      testUtils.signJWTHelper(payload, 'secret', options, (err, token) => {
-        const decoded = jwt.decode(token);
+      await testUtils.signJWTHelper(payload, 'secret', options, async (err, token) => {
+        const decoded = await jwt.decode(token);
         testUtils.asyncCheck(done, () => {
           expect(err).to.equal(null);
           expect(JSON.stringify(decoded)).to.equal(payload);

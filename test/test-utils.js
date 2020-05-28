@@ -12,7 +12,7 @@ const sinon = require('sinon');
 function asyncCheck(done, testFunction) {
   try {
     testFunction();
-    done();
+    // done();
   }
   catch(err) {
     done(err);
@@ -56,18 +56,18 @@ function base64UrlEncode(str) {
  * @param {object} options Verify options
  * @param {function(err, token):void} callback
  */
-function verifyJWTHelper(jwtString, secretOrPrivateKey, options, callback) {
+async function verifyJWTHelper(jwtString, secretOrPrivateKey, options, callback) {
   // freeze the time to ensure the clock remains stable across the async and sync calls
   const fakeClock = sinon.useFakeTimers({now: Date.now()});
   let error;
   let syncVerified;
   try {
-    syncVerified = jwt.verify(jwtString, secretOrPrivateKey, options);
+    syncVerified = await jwt.verify(jwtString, secretOrPrivateKey, options);
   }
   catch (err) {
     error = err;
   }
-  jwt.verify(jwtString, secretOrPrivateKey, options, (err, asyncVerifiedToken) => {
+  await jwt.verify(jwtString, secretOrPrivateKey, options, (err, asyncVerifiedToken) => {
     try {
       if (error) {
         expectEqualError(err, error);
@@ -93,18 +93,18 @@ function verifyJWTHelper(jwtString, secretOrPrivateKey, options, callback) {
  * @param {object} options Sign options
  * @param {function(err, token):void} callback
  */
-function signJWTHelper(payload, secretOrPrivateKey, options, callback) {
+async function signJWTHelper(payload, secretOrPrivateKey, options, callback) {
   // freeze the time to ensure the clock remains stable across the async and sync calls
   const fakeClock = sinon.useFakeTimers({now: Date.now()});
   let error;
   let syncSigned;
   try {
-    syncSigned = jwt.sign(payload, secretOrPrivateKey, options);
+    syncSigned = await jwt.sign(payload, secretOrPrivateKey, options);
   }
   catch (err) {
     error = err;
   }
-  jwt.sign(payload, secretOrPrivateKey, options, (err, asyncSigned) => {
+  await jwt.sign(payload, secretOrPrivateKey, options, (err, asyncSigned) => {
     fakeClock.restore();
     if (error) {
       expectEqualError(err, error);

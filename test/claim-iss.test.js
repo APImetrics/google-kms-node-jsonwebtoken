@@ -5,6 +5,8 @@ const expect = require('chai').expect;
 const util = require('util');
 const testUtils = require('./test-utils');
 
+const done = () => () => null;
+
 function signWithIssuer(issuer, payload, callback) {
   const options = {algorithm: 'none'};
   if (issuer !== undefined) {
@@ -32,8 +34,8 @@ describe('issuer', function() {
       {},
       {foo: 'bar'},
     ].forEach((issuer) => {
-      it(`should error with with value ${util.inspect(issuer)}`, function (done) {
-        signWithIssuer(issuer, {}, (err) => {
+      it(`should error with with value ${util.inspect(issuer)}`, async function () {
+        await signWithIssuer(issuer, {}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(Error);
             expect(err).to.have.property('message', '"issuer" must be a string');
@@ -43,7 +45,7 @@ describe('issuer', function() {
     });
 
     // undefined needs special treatment because {} is not the same as {issuer: undefined}
-    it('should error with with value undefined', function (done) {
+    it('should error with with value undefined', async function () {
       testUtils.signJWTHelper({}, undefined, {issuer: undefined, algorithm: 'none'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
@@ -52,8 +54,8 @@ describe('issuer', function() {
       });
     });
 
-    it('should error when "iss" is in payload', function (done) {
-      signWithIssuer('foo', {iss: 'bar'}, (err) => {
+    it('should error when "iss" is in payload', async function () {
+      await signWithIssuer('foo', {iss: 'bar'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -64,8 +66,8 @@ describe('issuer', function() {
       });
     });
 
-    it('should error with a string payload', function (done) {
-      signWithIssuer('foo', 'a string payload', (err) => {
+    it('should error with a string payload', async function () {
+      await signWithIssuer('foo', 'a string payload', (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -76,8 +78,8 @@ describe('issuer', function() {
       });
     });
 
-    it('should error with a Buffer payload', function (done) {
-      signWithIssuer('foo', new Buffer('a Buffer payload'), (err) => {
+    it('should error with a Buffer payload', async function () {
+      await signWithIssuer('foo', new Buffer('a Buffer payload'), (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -90,9 +92,9 @@ describe('issuer', function() {
   });
 
   describe('when signing and verifying a token', function () {
-    it('should not verify "iss" if verify "issuer" option not provided', function(done) {
-      signWithIssuer(undefined, {iss: 'foo'}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+    it('should not verify "iss" if verify "issuer" option not provided', async function () {
+      await signWithIssuer(undefined, {iss: 'foo'}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -103,9 +105,9 @@ describe('issuer', function() {
     });
 
     describe('with string "issuer" option', function () {
-      it('should verify with a string "issuer"', function (done) {
-        signWithIssuer('foo', {}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2, decoded) => {
+      it('should verify with a string "issuer"', async function () {
+        await signWithIssuer('foo', {}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.null;
@@ -115,9 +117,9 @@ describe('issuer', function() {
         });
       });
 
-      it('should verify with a string "iss"', function (done) {
-        signWithIssuer(undefined, {iss: 'foo'}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2, decoded) => {
+      it('should verify with a string "iss"', async function () {
+        await signWithIssuer(undefined, {iss: 'foo'}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.null;
@@ -127,9 +129,9 @@ describe('issuer', function() {
         });
       });
 
-      it('should error if "iss" does not match verify "issuer" option', function(done) {
-        signWithIssuer(undefined, {iss: 'foobar'}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2) => {
+      it('should error if "iss" does not match verify "issuer" option', async function() {
+        await signWithIssuer(undefined, {iss: 'foobar'}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.instanceOf(jwt.JsonWebTokenError);
@@ -139,9 +141,9 @@ describe('issuer', function() {
         });
       });
 
-      it('should error without "iss" and with verify "issuer" option', function(done) {
-        signWithIssuer(undefined, {}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2) => {
+      it('should error without "iss" and with verify "issuer" option', async function () {
+        await signWithIssuer(undefined, {}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: 'foo'}, (e2) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.instanceOf(jwt.JsonWebTokenError);
@@ -153,9 +155,9 @@ describe('issuer', function() {
     });
 
     describe('with array "issuer" option', function () {
-      it('should verify with a string "issuer"', function (done) {
-        signWithIssuer('bar', {}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2, decoded) => {
+      it('should verify with a string "issuer"', async function () {
+        await signWithIssuer('bar', {}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.null;
@@ -165,9 +167,9 @@ describe('issuer', function() {
         });
       });
 
-      it('should verify with a string "iss"', function (done) {
-        signWithIssuer(undefined, {iss: 'foo'}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2, decoded) => {
+      it('should verify with a string "iss"', async function () {
+        await signWithIssuer(undefined, {iss: 'foo'}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.null;
@@ -177,9 +179,9 @@ describe('issuer', function() {
         });
       });
 
-      it('should error if "iss" does not match verify "issuer" option', function(done) {
-        signWithIssuer(undefined, {iss: 'foobar'}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2) => {
+      it('should error if "iss" does not match verify "issuer" option', async function () {
+        await signWithIssuer(undefined, {iss: 'foobar'}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.instanceOf(jwt.JsonWebTokenError);
@@ -189,9 +191,9 @@ describe('issuer', function() {
         });
       });
 
-      it('should error without "iss" and with verify "issuer" option', function(done) {
-        signWithIssuer(undefined, {}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2) => {
+      it('should error without "iss" and with verify "issuer" option', async function() {
+        await signWithIssuer(undefined, {}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {issuer: ['foo', 'bar']}, (e2) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.instanceOf(jwt.JsonWebTokenError);

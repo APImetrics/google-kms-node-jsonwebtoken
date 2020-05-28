@@ -5,12 +5,14 @@ const expect = require('chai').expect;
 const util = require('util');
 const testUtils = require('./test-utils');
 
-function signWithJWTId(jwtid, payload, callback) {
+const done = () => () => null;
+
+async function signWithJWTId(jwtid, payload, callback) {
   const options = {algorithm: 'none'};
   if (jwtid !== undefined) {
     options.jwtid = jwtid;
   }
-  testUtils.signJWTHelper(payload, 'secret', options, callback);
+  await testUtils.signJWTHelper(payload, 'secret', options, callback);
 }
 
 describe('jwtid', function() {
@@ -32,8 +34,8 @@ describe('jwtid', function() {
       {},
       {foo: 'bar'},
     ].forEach((jwtid) => {
-      it(`should error with with value ${util.inspect(jwtid)}`, function (done) {
-        signWithJWTId(jwtid, {}, (err) => {
+      it(`should error with with value ${util.inspect(jwtid)}`, async function () {
+        await signWithJWTId(jwtid, {}, (err) => {
           testUtils.asyncCheck(done, () => {
             expect(err).to.be.instanceOf(Error);
             expect(err).to.have.property('message', '"jwtid" must be a string');
@@ -43,7 +45,7 @@ describe('jwtid', function() {
     });
 
     // undefined needs special treatment because {} is not the same as {jwtid: undefined}
-    it('should error with with value undefined', function (done) {
+    it('should error with with value undefined', async function () {
       testUtils.signJWTHelper({}, undefined, {jwtid: undefined, algorithm: 'none'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
@@ -52,8 +54,8 @@ describe('jwtid', function() {
       });
     });
 
-    it('should error when "jti" is in payload', function (done) {
-      signWithJWTId('foo', {jti: 'bar'}, (err) => {
+    it('should error when "jti" is in payload', async function () {
+      await signWithJWTId('foo', {jti: 'bar'}, (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -64,8 +66,8 @@ describe('jwtid', function() {
       });
     });
 
-    it('should error with a string payload', function (done) {
-      signWithJWTId('foo', 'a string payload', (err) => {
+    it('should error with a string payload', async function () {
+      await signWithJWTId('foo', 'a string payload', (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -76,8 +78,8 @@ describe('jwtid', function() {
       });
     });
 
-    it('should error with a Buffer payload', function (done) {
-      signWithJWTId('foo', new Buffer('a Buffer payload'), (err) => {
+    it('should error with a Buffer payload', async function () {
+      await signWithJWTId('foo', new Buffer('a Buffer payload'), (err) => {
         testUtils.asyncCheck(done, () => {
           expect(err).to.be.instanceOf(Error);
           expect(err).to.have.property(
@@ -90,9 +92,9 @@ describe('jwtid', function() {
   });
 
   describe('when signing and verifying a token', function () {
-    it('should not verify "jti" if verify "jwtid" option not provided', function(done) {
-      signWithJWTId(undefined, {jti: 'foo'}, (e1, token) => {
-        testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
+    it('should not verify "jti" if verify "jwtid" option not provided', async function () {
+      await signWithJWTId(undefined, {jti: 'foo'}, async (e1, token) => {
+        await testUtils.verifyJWTHelper(token, undefined, {}, (e2, decoded) => {
           testUtils.asyncCheck(done, () => {
             expect(e1).to.be.null;
             expect(e2).to.be.null;
@@ -103,9 +105,9 @@ describe('jwtid', function() {
     });
 
     describe('with "jwtid" option', function () {
-      it('should verify with "jwtid" option', function (done) {
-        signWithJWTId('foo', {}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {jwtid: 'foo'}, (e2, decoded) => {
+      it('should verify with "jwtid" option', async function () {
+        await signWithJWTId('foo', {}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {jwtid: 'foo'}, (e2, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.null;
@@ -115,9 +117,9 @@ describe('jwtid', function() {
         });
       });
 
-      it('should verify with "jti" in payload', function (done) {
-        signWithJWTId(undefined, {jti: 'foo'}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {jetid: 'foo'}, (e2, decoded) => {
+      it('should verify with "jti" in payload', async function () {
+        await signWithJWTId(undefined, {jti: 'foo'}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {jetid: 'foo'}, (e2, decoded) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.null;
@@ -127,9 +129,9 @@ describe('jwtid', function() {
         });
       });
 
-      it('should error if "jti" does not match verify "jwtid" option', function(done) {
-        signWithJWTId(undefined, {jti: 'bar'}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {jwtid: 'foo'}, (e2) => {
+      it('should error if "jti" does not match verify "jwtid" option', async function () {
+        await signWithJWTId(undefined, {jti: 'bar'}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {jwtid: 'foo'}, (e2) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.instanceOf(jwt.JsonWebTokenError);
@@ -139,9 +141,9 @@ describe('jwtid', function() {
         });
       });
 
-      it('should error without "jti" and with verify "jwtid" option', function(done) {
-        signWithJWTId(undefined, {}, (e1, token) => {
-          testUtils.verifyJWTHelper(token, undefined, {jwtid: 'foo'}, (e2) => {
+      it('should error without "jti" and with verify "jwtid" option', async function() {
+        await signWithJWTId(undefined, {}, async (e1, token) => {
+          await testUtils.verifyJWTHelper(token, undefined, {jwtid: 'foo'}, (e2) => {
             testUtils.asyncCheck(done, () => {
               expect(e1).to.be.null;
               expect(e2).to.be.instanceOf(jwt.JsonWebTokenError);
