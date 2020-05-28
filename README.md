@@ -1,3 +1,10 @@
+# Fork to use Google KMS as a key management system
+
+Interface is now async - node 8+ only
+
+Release 1 - 2020-05-28
+
+
 # jsonwebtoken
 
 | **Build** | **Dependency** |
