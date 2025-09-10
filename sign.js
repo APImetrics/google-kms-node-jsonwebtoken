@@ -15,9 +15,9 @@ if (PS_SUPPORTED) {
 }
 
 var sign_options_schema = {
-  expiresIn: { isValid: function(value) { return isInteger(value) || (isString(value) && value); }, message: '"expiresIn" should be a number of seconds or string representing a timespan' },
-  notBefore: { isValid: function(value) { return isInteger(value) || (isString(value) && value); }, message: '"notBefore" should be a number of seconds or string representing a timespan' },
-  audience: { isValid: function(value) { return isString(value) || Array.isArray(value); }, message: '"audience" must be a string or array' },
+  expiresIn: { isValid: function (value) { return isInteger(value) || (isString(value) && value); }, message: '"expiresIn" should be a number of seconds or string representing a timespan' },
+  notBefore: { isValid: function (value) { return isInteger(value) || (isString(value) && value); }, message: '"notBefore" should be a number of seconds or string representing a timespan' },
+  audience: { isValid: function (value) { return isString(value) || Array.isArray(value); }, message: '"audience" must be a string or array' },
   algorithm: { isValid: includes.bind(null, SUPPORTED_ALGS), message: '"algorithm" must be a valid string enum value' },
   header: { isValid: isPlainObject, message: '"header" must be an object' },
   encoding: { isValid: isString, message: '"encoding" must be a string' },
@@ -26,7 +26,8 @@ var sign_options_schema = {
   jwtid: { isValid: isString, message: '"jwtid" must be a string' },
   noTimestamp: { isValid: isBoolean, message: '"noTimestamp" must be a boolean' },
   keyid: { isValid: isString, message: '"keyid" must be a string' },
-  mutatePayload: { isValid: isBoolean, message: '"mutatePayload" must be a boolean' }
+  mutatePayload: { isValid: isBoolean, message: '"mutatePayload" must be a boolean' },
+  noTyp: { isValid: isBoolean, message: '"noTyp" must be a boolean' },
 };
 
 var registered_claims_schema = {
@@ -40,7 +41,7 @@ function validate(schema, allowUnknown, object, parameterName) {
     throw new Error('Expected "' + parameterName + '" to be a plain object.');
   }
   Object.keys(object)
-    .forEach(function(key) {
+    .forEach(function (key) {
       var validator = schema[key];
       if (!validator) {
         if (!allowUnknown) {
@@ -79,7 +80,7 @@ var options_for_objects = [
   'jwtid',
 ];
 
-module.exports = async function(payload, secretOrPrivateKey, options, callback) {
+module.exports = async function (payload, secretOrPrivateKey, options, callback) {
   if (typeof options === 'function') {
     callback = options;
     options = {};
@@ -88,11 +89,11 @@ module.exports = async function(payload, secretOrPrivateKey, options, callback) 
   }
 
   var isObjectPayload = typeof payload === 'object' &&
-                        !Buffer.isBuffer(payload);
+    !Buffer.isBuffer(payload);
 
   var header = Object.assign({
     alg: options.algorithm || 'HS256',
-    typ: isObjectPayload ? 'JWT' : undefined,
+    typ: isObjectPayload && !options.noTyp ? 'JWT' : undefined,
     kid: options.keyid
   }, options.header);
 
@@ -117,7 +118,7 @@ module.exports = async function(payload, secretOrPrivateKey, options, callback) 
       return failure(error);
     }
     if (!options.mutatePayload) {
-      payload = Object.assign({},payload);
+      payload = Object.assign({}, payload);
     }
   } else {
     var invalid_options = options_for_objects.filter(function (opt) {
@@ -125,7 +126,7 @@ module.exports = async function(payload, secretOrPrivateKey, options, callback) 
     });
 
     if (invalid_options.length > 0) {
-      return failure(new Error('invalid ' + invalid_options.join(',') + ' option for ' + (typeof payload ) + ' payload'));
+      return failure(new Error('invalid ' + invalid_options.join(',') + ' option for ' + (typeof payload) + ' payload'));
     }
   }
 
@@ -211,6 +212,6 @@ module.exports = async function(payload, secretOrPrivateKey, options, callback) 
       // }
     });
   } else {
-    return jws.sign({header: header, payload: payload, secret: secretOrPrivateKey, encoding: encoding});
+    return jws.sign({ header: header, payload: payload, secret: secretOrPrivateKey, encoding: encoding });
   }
 };
